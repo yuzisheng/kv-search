@@ -11,34 +11,39 @@
     <properties>
         <maven.compiler.source>8</maven.compiler.source>
         <maven.compiler.target>8</maven.compiler.target>
-        <scala.version>2.11.7</scala.version>
+        <scala.binary.verion>2.12</scala.binary.verion>
+        <scala.version>2.12.13</scala.version>
+        <spark.core.version>3.0.2</spark.core.version>
+        <hbase.client.version>1.4.9</hbase.client.version>
+        <hbase.server.version>1.4.9</hbase.server.version>
+        <hadoop.hdfs.version>2.7.7</hadoop.hdfs.version>
     </properties>
 
     <dependencies>
         <dependency>
             <groupId>org.apache.spark</groupId>
-            <artifactId>spark-core_2.11</artifactId>
-            <version>2.3.3</version>
+            <artifactId>spark-core_${scala.binary.verion}</artifactId>
+            <version>${spark.core.version}</version>
         </dependency>
         <dependency>
             <groupId>org.scala-lang</groupId>
             <artifactId>scala-library</artifactId>
-            <version>2.11.7</version>
+            <version>${scala.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.hbase</groupId>
             <artifactId>hbase-client</artifactId>
-            <version>1.4.9</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.hadoop</groupId>
-            <artifactId>hadoop-hdfs</artifactId>
-            <version>2.7.7</version>
+            <version>${hbase.client.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.hbase</groupId>
             <artifactId>hbase-server</artifactId>
-            <version>1.4.9</version>
+            <version>${hbase.server.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-hdfs</artifactId>
+            <version>${hadoop.hdfs.version}</version>
         </dependency>
     </dependencies>
 
