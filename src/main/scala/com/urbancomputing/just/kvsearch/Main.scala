@@ -1,11 +1,11 @@
-package com.urbancomputing
+package com.urbancomputing.just.kvsearch
 
-import com.urbancomputing.app.DataAnalysisApp._
-import com.urbancomputing.app.DataProcessApp._
-import com.urbancomputing.app.IndexBuildApp._
-import com.urbancomputing.app.QueryApp._
-import com.urbancomputing.util.OtherUtils._
-import com.urbancomputing.util.QueryUtils.{estimateDelta, hbaseScanAll, sparkBlockFilter}
+import com.urbancomputing.just.kvsearch.app.DataAnalysisApp._
+import com.urbancomputing.just.kvsearch.app.DataProcessApp._
+import com.urbancomputing.just.kvsearch.app.IndexBuildApp._
+import com.urbancomputing.just.kvsearch.app.QueryApp._
+import com.urbancomputing.just.kvsearch.util.OtherUtils._
+import com.urbancomputing.just.kvsearch.util.QueryUtils.{estimateDelta, hbaseScanAll, sparkBlockFilter}
 import org.apache.spark.{SparkConf, SparkContext}
 
 import scala.math._

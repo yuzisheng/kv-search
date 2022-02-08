@@ -1,8 +1,8 @@
-package com.urbancomputing.app
+package com.urbancomputing.just.kvsearch.app
 
-import com.urbancomputing.util.DistanceUtils._
-import com.urbancomputing.util.OtherUtils._
-import com.urbancomputing.util.QueryUtils._
+import com.urbancomputing.just.kvsearch.util.DistanceUtils._
+import com.urbancomputing.just.kvsearch.util.OtherUtils._
+import com.urbancomputing.just.kvsearch.util.QueryUtils._
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 

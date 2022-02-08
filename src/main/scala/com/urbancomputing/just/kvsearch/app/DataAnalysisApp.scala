@@ -1,4 +1,4 @@
-package com.urbancomputing.app
+package com.urbancomputing.just.kvsearch.app
 
 import org.apache.spark.rdd.RDD
 import org.apache.spark.{SparkConf, SparkContext}

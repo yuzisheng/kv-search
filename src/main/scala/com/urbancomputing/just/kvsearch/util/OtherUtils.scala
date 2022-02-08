@@ -1,4 +1,4 @@
-package com.urbancomputing.util
+package com.urbancomputing.just.kvsearch.util
 
 import scala.math.max
 import scala.util.Random

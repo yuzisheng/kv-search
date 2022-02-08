@@ -1,4 +1,4 @@
-package com.urbancomputing.util
+package com.urbancomputing.just.kvsearch.util
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.hbase.{HBaseConfiguration, HColumnDescriptor, HTableDescriptor, TableName}

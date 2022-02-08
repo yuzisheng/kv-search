@@ -1,7 +1,7 @@
-package com.urbancomputing.util
+package com.urbancomputing.just.kvsearch.util
 
-import com.urbancomputing.util.DistanceUtils._
-import com.urbancomputing.util.RowKeyUtils._
+import DistanceUtils._
+import RowKeyUtils._
 import org.apache.hadoop.hbase.TableName
 import org.apache.hadoop.hbase.client.Scan
 import org.apache.hadoop.hbase.filter.FilterList.Operator
