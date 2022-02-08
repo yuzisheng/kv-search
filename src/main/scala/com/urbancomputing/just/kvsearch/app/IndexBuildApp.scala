@@ -1,7 +1,6 @@
 package com.urbancomputing.just.kvsearch.app
 
 import com.urbancomputing.just.kvsearch.util.{HBaseUtils, RowKeyUtils}
-import com.urbancomputing.util.HBaseUtils
 import org.apache.hadoop.hbase.client.Put
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable
 import org.apache.hadoop.hbase.util.Bytes
