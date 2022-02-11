@@ -137,9 +137,11 @@ object DataProcessApp {
 
     val inputPath = DataProcessApp.getClass.getClassLoader.getResource("TS_8820_60.txt").getPath
     val rdd = spark.textFile(inputPath)
+    checkData(rdd)
 
     // raw data
-    val fakeRdd = generateFakeTs(rdd, 0, 0)
-    checkData(fakeRdd)
+    val fakeRdd = generateFakeTs(rdd, 20, 100)
+    fakeRdd.coalesce(1)
+      .saveAsTextFile(s"./fake_ts_${fakeRdd.count()}_${fakeRdd.first().split("\t").last.split(",").length}")
   }
 }

@@ -5,7 +5,7 @@ import com.urbancomputing.just.kvsearch.util.DistanceUtils
 object DimGrowExp {
 
   def main(args: Array[String]): Unit = {
-    val data = ExpUtil.readData("E:\\yuzisheng\\data\\fake_ts_8820_6000.txt").slice(0, 1000)
+    val data = ExpUtil.readDataToSeq("E:\\yuzisheng\\data\\fake_ts_8820_6000.txt").slice(0, 1000)
     println(data.size, data.head.size)
 
     // 时序维度增长
