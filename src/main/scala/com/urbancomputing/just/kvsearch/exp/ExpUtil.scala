@@ -111,13 +111,15 @@ object ExpUtil {
   /**
    * 预计算并保存采样时序的KNN结果（仅使用一次）
    */
-  def saveKnnResult(rawSeqRdd: RDD[Seq[Double]], sampleNum: Int): Unit = {
+  def saveKnnResult(sampleNum: Int): Unit = {
     val ks = 100 to 10000 by 100
-    val querySeqs = rawSeqRdd.takeSample(false, sampleNum)
+    val data = spark.textFile("E:\\yuzisheng\\data\\ts_185220_6060.txt")
+      .map(line => line.split("\t").last.split(" ").map(_.toDouble))
+    val querySeqs = data.takeSample(false, sampleNum)
 
     val writer = new PrintWriter(new File(s"E:\\yuzisheng\\data\\knn_185220_6060_$sampleNum.txt"))
     querySeqs.par.foreach(querySeq => {
-      val topk = rawSeqRdd.map(seq => chebyshevDistance(seq, querySeq)).takeOrdered(ks.last)
+      val topk = data.map(seq => chebyshevDistance(seq, querySeq)).takeOrdered(ks.last)
       val deltas = for (k <- ks) yield topk(k - 1)
       val r = (querySeq.mkString(" "), ks.mkString(" "), deltas.mkString(" "))
       writer.write(s"${r._1}\t${r._2}\t${r._3}" + "\n")
@@ -140,7 +142,7 @@ object ExpUtil {
   }
 
   def main(args: Array[String]): Unit = {
-    // saveSampleData()
+    saveKnnResult(1000)
     println("ok")
   }
 
