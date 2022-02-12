@@ -1,11 +1,12 @@
 package com.urbancomputing.just.kvsearch.exp
 
+import com.urbancomputing.just.kvsearch.exp.ExpUtil.readDataToSeq
 import com.urbancomputing.just.kvsearch.util.DistanceUtils
 
 object CardinalGrowExp {
 
   def main(args: Array[String]): Unit = {
-    val data = ExpUtil.readDataToSeq("E:\\yuzisheng\\data\\fake_ts_8820_6000.txt").slice(0, 1000).toSeq
+    val data = readDataToSeq("E:\\yuzisheng\\data\\ts_8820_6000.txt").slice(0, 1000).toSeq
     println(data.size, data.head.size)
 
     // 数据基数增长（百分比）

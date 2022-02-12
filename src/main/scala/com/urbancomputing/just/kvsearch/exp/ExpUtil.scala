@@ -1,7 +1,6 @@
 package com.urbancomputing.just.kvsearch.exp
 
 import com.urbancomputing.just.kvsearch.util.DistanceUtils.chebyshevDistance
-import org.apache.spark.rdd.RDD
 import org.apache.spark.{SparkConf, SparkContext}
 
 import java.io.{File, PrintWriter}
@@ -114,7 +113,7 @@ object ExpUtil {
   def saveKnnResult(sampleNum: Int): Unit = {
     val ks = 100 to 10000 by 100
     val data = spark.textFile("E:\\yuzisheng\\data\\ts_185220_6060.txt")
-      .map(line => line.split("\t").last.split(" ").map(_.toDouble))
+      .map(line => line.split("\t").last.split(",").map(_.toDouble))
     val querySeqs = data.takeSample(false, sampleNum)
 
     val writer = new PrintWriter(new File(s"E:\\yuzisheng\\data\\knn_185220_6060_$sampleNum.txt"))
