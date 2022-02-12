@@ -5,6 +5,7 @@ import org.apache.spark.{SparkConf, SparkContext}
 
 import java.io.{File, PrintWriter}
 import scala.io.Source
+import scala.util.Random
 
 object ExpUtil {
 
@@ -108,7 +109,7 @@ object ExpUtil {
   }
 
   /**
-   * 预计算并保存采样时序的KNN结果（仅使用一次）
+   * 使用SPARK预计算并保存采样时序的KNN结果（仅使用一次）
    */
   def saveKnnResult(sampleNum: Int): Unit = {
     val ks = 100 to 10000 by 100
@@ -119,6 +120,48 @@ object ExpUtil {
     val writer = new PrintWriter(new File(s"E:\\yuzisheng\\data\\knn_185220_6060_$sampleNum.txt"))
     querySeqs.par.foreach(querySeq => {
       val topk = data.map(seq => chebyshevDistance(seq, querySeq)).takeOrdered(ks.last)
+      val deltas = for (k <- ks) yield topk(k - 1)
+      val r = (querySeq.mkString(" "), ks.mkString(" "), deltas.mkString(" "))
+      writer.write(s"${r._1}\t${r._2}\t${r._3}" + "\n")
+    })
+    writer.close()
+  }
+
+  /**
+   * 流式预计算并保存采样时序的KNN结果（仅使用一次）
+   */
+  def saveKnnResult2(sampleNum: Int): Unit = {
+    def findKMax(arr: Iterator[Double], k: Int): Seq[Double] = {
+      val topk = new Array[Double](k)
+      for (i <- topk.indices) {
+        topk(i) = Double.MaxValue
+      }
+      while (arr.hasNext) {
+        val value = arr.next()
+        var maxi = 0
+        var maxv = topk(0)
+        for (i <- topk.indices) {
+          if (topk(i) > maxv) {
+            maxi = i
+            maxv = topk(i)
+          }
+        }
+        if (value < maxv) {
+          topk(maxi) = value
+        }
+      }
+      topk.sorted
+    }
+
+    val ks = 100 to 10000 by 100
+    val querySeqs = Random.shuffle(
+      readDataToSeq("E:\\yuzisheng\\data\\ts_185220_6060.txt")).take(sampleNum).toSeq
+
+    val writer = new PrintWriter(new File(s"E:\\yuzisheng\\data\\knn_185220_6060_$sampleNum.txt"))
+    querySeqs.par.foreach(querySeq => {
+      val ts = readDataToSeq("E:\\yuzisheng\\data\\ts_185220_6060.txt")
+      val dists = ts.map(seq => chebyshevDistance(seq, querySeq))
+      val topk = findKMax(dists, ks.last)
       val deltas = for (k <- ks) yield topk(k - 1)
       val r = (querySeq.mkString(" "), ks.mkString(" "), deltas.mkString(" "))
       writer.write(s"${r._1}\t${r._2}\t${r._3}" + "\n")
@@ -140,8 +183,30 @@ object ExpUtil {
     }).toSeq
   }
 
+  /**
+   * 预计算原始时序在不同时间周期下的块表示并保存（仅使用一次）
+   */
+  def saveBlockDataByTp(): Unit = {
+    val tps = 100 to 6100 by 100
+    tps.par.foreach(tp => {
+      println(s"+++ tp = $tp")
+      val writer = new PrintWriter(new File(s"E:\\yuzisheng\\data\\block\\block_185220_6060_tp_$tp.txt"))
+      val ts = readDataToSeq("E:\\yuzisheng\\data\\ts_185220_6060.txt")
+      ts.foreach(seq => {
+        val blockSeq = for (i <- seq.indices by tp)
+          yield {
+            val subSeq = seq.slice(i, i + tp)
+            (i / tp, subSeq.max, subSeq.min)
+          }
+        writer.write(blockSeq.map(r => s"${r._2} ${r._3}").mkString(",") + "\n")
+      })
+      writer.close()
+    })
+  }
+
   def main(args: Array[String]): Unit = {
-    saveKnnResult(1000)
+    saveKnnResult2(1000)
+    saveBlockDataByTp()
     println("ok")
   }
 
