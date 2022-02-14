@@ -4,6 +4,7 @@ import com.urbancomputing.just.kvsearch.util.DistanceUtils.chebyshevDistance
 import org.apache.spark.{SparkConf, SparkContext}
 
 import java.io.{File, PrintWriter}
+import scala.collection.mutable.ListBuffer
 import scala.io.Source
 import scala.util.Random
 
@@ -154,8 +155,27 @@ object ExpUtil {
     }
 
     val ks = 100 to 10000 by 100
-    val querySeqs = Random.shuffle(
-      readDataToSeq("E:\\yuzisheng\\data\\ts_185220_6060.txt")).take(sampleNum).toSeq
+    val sampleIndices = new ListBuffer[Int]()
+    while (sampleIndices.length != sampleNum) {
+      val i = Random.nextInt(185220)
+      if (!sampleIndices.contains(i)) {
+        sampleIndices.append(i)
+      }
+    }
+    println(sampleIndices)
+
+    val querySeqs = new ListBuffer[Seq[Double]]()
+    val data = readDataToSeq("E:\\yuzisheng\\data\\ts_185220_6060.txt")
+    var i = 0
+    while (data.hasNext && querySeqs.length != sampleNum) {
+      if (sampleIndices.contains(i)) {
+        querySeqs.append(data.next())
+      } else {
+        data.next()
+      }
+      i += 1
+    }
+    println("+++ sample query seq done")
 
     val writer = new PrintWriter(new File(s"E:\\yuzisheng\\data\\knn_185220_6060_$sampleNum.txt"))
     querySeqs.par.foreach(querySeq => {
@@ -206,7 +226,6 @@ object ExpUtil {
 
   def main(args: Array[String]): Unit = {
     saveKnnResult2(1000)
-    saveBlockDataByTp()
     println("ok")
   }
 
