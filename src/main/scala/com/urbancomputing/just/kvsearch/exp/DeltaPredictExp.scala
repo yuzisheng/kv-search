@@ -34,7 +34,7 @@ object DeltaPredictExp {
   /**
    * 预测delta
    */
-  private def predictDelta(sampleBlockData: Seq[(Double, Double)], qsBlock: (Double, Double), k: Int, fraction: Double): Double = {
+  def predictDelta(sampleBlockData: Seq[(Double, Double)], qsBlock: (Double, Double), k: Int, fraction: Double): Double = {
     val sampleK = (k * fraction).toInt + 1
     val upperDists = sampleBlockData.map(b => max(abs(b._1 - qsBlock._2), abs(b._2 - qsBlock._1)))
     findKthMax(upperDists, sampleK)
