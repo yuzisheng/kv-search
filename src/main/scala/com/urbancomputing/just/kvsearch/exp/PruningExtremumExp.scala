@@ -5,7 +5,7 @@ import com.urbancomputing.just.kvsearch.exp.ExpUtils.{readBlockData, readKnnData
 
 import java.io.{File, PrintWriter}
 
-object ExtremumPruningExp {
+object PruningExtremumExp {
 
   private def getBlock(seq: Seq[Double], tp: Int): Seq[(Double, Double)] = {
     for (i <- seq.indices by tp)
