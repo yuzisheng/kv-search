@@ -1,7 +1,7 @@
 package com.urbancomputing.just.kvsearch.exp
 
-import com.urbancomputing.just.kvsearch.exp.DeltaPredictExp.predictDelta
-import com.urbancomputing.just.kvsearch.exp.ExpUtil.{readBlockData, readKnnData}
+import com.urbancomputing.just.kvsearch.exp.PredictDeltaExp.predictDelta
+import com.urbancomputing.just.kvsearch.exp.ExpUtils.{readBlockData, readKnnData}
 
 import java.io.{File, PrintWriter}
 

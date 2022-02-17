@@ -1,7 +1,7 @@
 package com.urbancomputing.just.kvsearch.exp
 
-import com.urbancomputing.just.kvsearch.exp.DeltaPredictExp.predictDelta
-import com.urbancomputing.just.kvsearch.exp.ExpUtil.{readBlockData, readDataToSeq, readKnnData}
+import com.urbancomputing.just.kvsearch.exp.PredictDeltaExp.predictDelta
+import com.urbancomputing.just.kvsearch.exp.ExpUtils.{readBlockData, readDataToSeq, readKnnData}
 import com.urbancomputing.just.kvsearch.util.DistanceUtils.multiBlockDistance
 
 import java.io.{File, PrintWriter}
@@ -9,7 +9,7 @@ import java.io.{File, PrintWriter}
 /**
  * 分块剪枝定理实验
  */
-object BlockPruningExp {
+object PruningBlockExp {
 
   private def getBlock(seq: Seq[Double], tp: Int): Seq[(Double, Double)] = {
     for (i <- seq.indices by tp)

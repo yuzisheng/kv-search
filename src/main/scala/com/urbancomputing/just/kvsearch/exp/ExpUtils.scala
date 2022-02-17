@@ -8,7 +8,7 @@ import scala.collection.mutable.ListBuffer
 import scala.io.Source
 import scala.util.Random
 
-object ExpUtil {
+object ExpUtils {
 
   private val conf = new SparkConf().setAppName("ExpUtil").setMaster("local[*]")
   private val spark = new SparkContext(conf)

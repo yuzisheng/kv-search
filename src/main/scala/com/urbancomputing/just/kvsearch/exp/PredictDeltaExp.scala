@@ -1,11 +1,11 @@
 package com.urbancomputing.just.kvsearch.exp
 
-import com.urbancomputing.just.kvsearch.exp.ExpUtil._
+import com.urbancomputing.just.kvsearch.exp.ExpUtils._
 
 import java.io.{File, PrintWriter}
 import scala.math._
 
-object DeltaPredictExp {
+object PredictDeltaExp {
 
   /**
    * 找到第k大的值
