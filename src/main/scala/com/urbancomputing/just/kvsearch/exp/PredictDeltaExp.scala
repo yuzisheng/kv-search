@@ -10,10 +10,10 @@ object PredictDeltaExp {
   /**
    * 找到第k大的值
    */
-  private def findKthMax(data: Seq[Double], k: Int): Double = {
-    val topk = new Array[Double](k)
+  private def findKthMax(data: Seq[Float], k: Int): Float = {
+    val topk = new Array[Float](k)
     for (i <- topk.indices) {
-      topk(i) = Double.MaxValue
+      topk(i) = Float.MaxValue
     }
     for (value <- data) {
       var maxi = 0
@@ -34,7 +34,7 @@ object PredictDeltaExp {
   /**
    * 预测delta
    */
-  def predictDelta(sampleBlockData: Seq[(Double, Double)], qsBlock: (Double, Double), k: Int, fraction: Double): Double = {
+  def predictDelta(sampleBlockData: Seq[(Float, Float)], qsBlock: (Float, Float), k: Int, fraction: Float): Double = {
     val sampleK = (k * fraction).toInt + 1
     val upperDists = sampleBlockData.map(b => max(abs(b._1 - qsBlock._2), abs(b._2 - qsBlock._1)))
     findKthMax(upperDists, sampleK)
@@ -43,7 +43,7 @@ object PredictDeltaExp {
   /**
    * 测试delta随alpha变化的趋势：理论上随着采样率alpha的增大，delta预测会更加精确
    */
-  def deltaByAlpha(knnData: Seq[(Seq[Double], Seq[Int], Seq[Double])],
+  def deltaByAlpha(knnData: Seq[(Seq[Float], Seq[Int], Seq[Float])],
                    fileName: String): Unit = {
     val percentages = 1 to 100 by 1
     val ks = 100 to 10000 by 100
@@ -60,7 +60,7 @@ object PredictDeltaExp {
         }
 
         val relativeErrors = percentages.par.map(p => {
-          (predictDelta(sampleDataBlocks(p - 1), queryBlock, k, p / 100.0) - trueDelta) / trueDelta
+          (predictDelta(sampleDataBlocks(p - 1), queryBlock, k, p / 100.0F) - trueDelta) / trueDelta
         })
         relativeErrors
       })
@@ -74,7 +74,7 @@ object PredictDeltaExp {
   /**
    * 测试delta随k变化的趋势：理论上随着k的增大，delta预测会更加精确
    */
-  def deltaByK(knnData: Seq[(Seq[Double], Seq[Int], Seq[Double])],
+  def deltaByK(knnData: Seq[(Seq[Float], Seq[Int], Seq[Float])],
                fileName: String): Unit = {
     val percentages = 1 to 100 by 1
     val sampleDataBlocks = getSampleBlocks
@@ -86,7 +86,7 @@ object PredictDeltaExp {
         val (querySeq, ks, trueDeltas) = knnRecord
         val relativeErrors = ks.zip(trueDeltas).par.map(t => {
           val (k, trueDelta) = t
-          (predictDelta(sampleBlock, (querySeq.max, querySeq.min), k, p / 100.0) - trueDelta) / trueDelta
+          (predictDelta(sampleBlock, (querySeq.max, querySeq.min), k, p / 100.0F) - trueDelta) / trueDelta
         })
         relativeErrors
       })

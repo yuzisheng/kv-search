@@ -7,7 +7,7 @@ import java.io.{File, PrintWriter}
 
 object PruningExtremumExp {
 
-  private def getBlock(seq: Seq[Double], tp: Int): Seq[(Double, Double)] = {
+  private def getBlock(seq: Seq[Float], tp: Int): Seq[(Float, Float)] = {
     for (i <- seq.indices by tp)
       yield {
         val subSeq = seq.slice(i, i + tp)
@@ -31,7 +31,7 @@ object PruningExtremumExp {
     knnData.zipWithIndex.foreach(r => {
       val ((querySeq, _, deltas), i) = r
       val trueDelta = deltas(kIndex)
-      val predictedDelta = predictDelta(sampleBlockData, (querySeq.max, querySeq.min), k, 0.01)
+      val predictedDelta = predictDelta(sampleBlockData, (querySeq.max, querySeq.min), k, 0.01F)
       // println("+++", trueDelta, predictedDelta, (predictedDelta - trueDelta) / trueDelta)
       val keyRange1 = (querySeq.min - trueDelta, querySeq.max + trueDelta)
       val keyRange2 = (querySeq.min - predictedDelta, querySeq.max + predictedDelta)

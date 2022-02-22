@@ -14,19 +14,19 @@ object Main {
   private val conf = new SparkConf().setAppName("KV-SEARCH")
   private val spark = new SparkContext(conf)
 
-  private def sample(hdfsPath: String, expTimes: Int): Seq[Seq[(Int, Double)]] = {
+  private def sample(hdfsPath: String, expTimes: Int): Seq[Seq[(Int, Float)]] = {
     val data = spark.textFile(hdfsPath)
     data
       .takeSample(withReplacement = false, expTimes)
-      .map(line => line.split("\t").last.split(",").map(_.toDouble).zipWithIndex.map(t => (t._2, t._1)).toSeq)
+      .map(line => line.split("\t").last.split(",").map(_.toFloat).zipWithIndex.map(t => (t._2, t._1)).toSeq)
   }
 
   private def sampleDiffDim(hdfsPath: String, expTimes: Int,
-                            dims: Seq[Int]): Seq[(Int, Seq[Seq[(Int, Double)]])] = {
+                            dims: Seq[Int]): Seq[(Int, Seq[Seq[(Int, Float)]])] = {
     val data = spark.textFile(hdfsPath)
     val sampleQs = data
       .takeSample(withReplacement = false, expTimes)
-      .map(line => line.split("\t").last.split(",").map(_.toDouble).zipWithIndex.map(t => (t._2, t._1)).toSeq)
+      .map(line => line.split("\t").last.split(",").map(_.toFloat).zipWithIndex.map(t => (t._2, t._1)).toSeq)
     dims
       .map(dim => (dim, sampleQs.map(_.slice(0, dim)).toSeq))
   }
@@ -53,7 +53,7 @@ object Main {
   def sampleBlockOp(hdfsPath: String, sampleNum: Int): Unit = {
     val tic = System.currentTimeMillis()
     val data = spark.textFile(hdfsPath)
-    val fraction = min(1.0, sampleNum.toDouble / data.count())
+    val fraction = min(1.0, sampleNum.toFloat / data.count()).toFloat
     sampleBlock(data, fraction, hdfsPath + s"_${sampleNum}_SAMPLE_BLOCK")
     val tok = System.currentTimeMillis()
 
@@ -100,7 +100,7 @@ object Main {
          |+++++++""".stripMargin)
   }
 
-  def queryOp(method: String, qs: Seq[(Int, Double)], k: Int, otherParam: String): (Seq[(Int, Double)], Double, Int) = {
+  def queryOp(method: String, qs: Seq[(Int, Float)], k: Int, otherParam: String): (Seq[(Int, Float)], Float, Int) = {
     method match {
       case "spark-scan" =>
         val hdfsPath = otherParam
@@ -115,7 +115,7 @@ object Main {
         // todo persist in memory
         val sampleBlockRdd = spark.textFile(sampleBlockHdfsPath).map(line => {
           val temp = line.split(" ")
-          (temp.head.toDouble, temp.last.toDouble)
+          (temp.head.toFloat, temp.last.toFloat)
         })
         val (totalNum, timeBlockLen, valueBlockLen) =
           hbaseTableName.split("_").toList match {
@@ -413,7 +413,7 @@ object Main {
                     k: Int, expTimes: Int, sampleNums: Seq[Int]): Unit = {
     val sampleQs = spark.textFile(hdfsPath)
       .takeSample(withReplacement = false, expTimes)
-      .map(line => line.split("\t").last.split(",").map(_.toDouble).zipWithIndex.map(t => (t._2, t._1)).toSeq)
+      .map(line => line.split("\t").last.split(",").map(_.toFloat).zipWithIndex.map(t => (t._2, t._1)).toSeq)
 
     val diffSampleNumRes = sampleNums.par.map(sampleNum => {
       val diffSampleRes = sampleQs.par.map(qs => {
@@ -453,7 +453,7 @@ object Main {
     val sampleQs = data.takeSample(withReplacement = false, expTimes).map(_._4)
     val sampleBlockRdd = spark.textFile(sampleBlockHdfsPath).map(line => {
       val temp = line.split(" ")
-      (temp.head.toDouble, temp.last.toDouble)
+      (temp.head.toFloat, temp.last.toFloat)
     })
     sampleBlockRdd.persist()
 

@@ -50,7 +50,7 @@ object IndexBuildApp {
     val convertRdd = rdd.flatMap(line => {
       val idAndSeq = line.split("\t", 2)
       val id = idAndSeq.head.toInt
-      val seq = idAndSeq.last.split(",").map(_.toDouble).toSeq
+      val seq = idAndSeq.last.split(",").map(_.toFloat).toSeq
       for (i <- seq.indices by timeBlockLen)
         yield {
           val timeBlockSeq = seq.slice(i, i + timeBlockLen)

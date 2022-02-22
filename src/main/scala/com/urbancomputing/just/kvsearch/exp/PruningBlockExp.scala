@@ -11,7 +11,7 @@ import java.io.{File, PrintWriter}
  */
 object PruningBlockExp {
 
-  private def getBlock(seq: Seq[Double], tp: Int): Seq[(Double, Double)] = {
+  private def getBlock(seq: Seq[Float], tp: Int): Seq[(Float, Float)] = {
     for (i <- seq.indices by tp)
       yield {
         val subSeq = seq.slice(i, i + tp)
@@ -52,7 +52,7 @@ object PruningBlockExp {
           val queryBlockSeq = getBlock(querySeq, tp)
           val blockSeqDis = multiBlockDistance(blockSeq, queryBlockSeq)
           val trueDelta = deltas(kIndex)
-          val predictedDelta = predictDelta(sampleBlockData, (querySeq.max, querySeq.min), k, 0.01)
+          val predictedDelta = predictDelta(sampleBlockData, (querySeq.max, querySeq.min), k, 0.01F)
           // println("+++", trueDelta, predictedDelta, (predictedDelta - trueDelta) / trueDelta)
           if (blockSeqDis > trueDelta) {
             filterNums1(i)(j) += 1

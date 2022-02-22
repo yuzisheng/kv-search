@@ -16,10 +16,10 @@ object ExpUtils {
   /**
    * 流式读取原始时序数据
    */
-  def readDataToSeq(filePath: String): Iterator[Seq[Double]] = {
+  def readDataToSeq(filePath: String): Iterator[Seq[Float]] = {
     val source = Source.fromFile(filePath, "UTF-8")
     val data = source.getLines()
-      .map(line => line.split("\t").last.split(",").map(_.toDouble).toSeq)
+      .map(line => line.split("\t").last.split(",").map(_.toFloat).toSeq)
     data
   }
 
@@ -30,7 +30,7 @@ object ExpUtils {
     val source = Source.fromFile("E:\\yuzisheng\\data\\ts_185220_6060.txt", "UTF-8")
     // 流式读取处理和保存已缓解内存压力
     val data = source.getLines()
-      .map(line => line.split("\t").last.split(",").map(_.toDouble).toSeq)
+      .map(line => line.split("\t").last.split(",").map(_.toFloat).toSeq)
     val block = data.map(seq => (seq.max, seq.min))
     val writer = new PrintWriter(new File("E:\\yuzisheng\\data\\block_185220_6060.txt"))
     var i = 1
@@ -45,10 +45,10 @@ object ExpUtils {
   /**
    * 读取时序块数据
    */
-  def readBlockData(filePath: String): Seq[(Double, Double)] = {
+  def readBlockData(filePath: String): Seq[(Float, Float)] = {
     val source = Source.fromFile(filePath, "UTF-8")
     val blockSeq = source.getLines().map(line => {
-      val block = line.split(" ").map(_.toDouble)
+      val block = line.split(" ").map(_.toFloat)
       (block.head, block.last)
     }).toSeq
     blockSeq
@@ -62,7 +62,7 @@ object ExpUtils {
       .flatMap(line => {
         val idAndSeq = line.split("\t", 2)
         val id = idAndSeq.head.toInt
-        val seq = idAndSeq.last.split(",").map(_.toDouble).toSeq
+        val seq = idAndSeq.last.split(",").map(_.toFloat).toSeq
         for (i <- seq.indices by tp)
           yield {
             val timeBlockSeq = seq.slice(i, i + tp)
@@ -99,9 +99,9 @@ object ExpUtils {
   /**
    * 统一读取采样块数据并以数组形式保存至内存
    */
-  def getSampleBlocks: Seq[Seq[(Double, Double)]] = {
+  def getSampleBlocks: Seq[Seq[(Float, Float)]] = {
     val percentages = 1 to 100 by 1
-    val sampleDataBlocks = new Array[Seq[(Double, Double)]](100)
+    val sampleDataBlocks = new Array[Seq[(Float, Float)]](100)
     for (p <- percentages) {
       val sampleDataBlock = readBlockData(s"E:\\yuzisheng\\data\\sample\\sample_185220_6060_$p.txt")
       sampleDataBlocks(p - 1) = sampleDataBlock
@@ -115,7 +115,7 @@ object ExpUtils {
   def saveKnnResult(sampleNum: Int): Unit = {
     val ks = 100 to 10000 by 100
     val data = spark.textFile("E:\\yuzisheng\\data\\ts_185220_6060.txt")
-      .map(line => line.split("\t").last.split(",").map(_.toDouble))
+      .map(line => line.split("\t").last.split(",").map(_.toFloat))
     val querySeqs = data.takeSample(false, sampleNum)
 
     val writer = new PrintWriter(new File(s"E:\\yuzisheng\\data\\knn_185220_6060_$sampleNum.txt"))
@@ -132,10 +132,10 @@ object ExpUtils {
    * 流式预计算并保存采样时序的KNN结果（仅使用一次）
    */
   def saveKnnResult2(sampleNum: Int): Unit = {
-    def findKMax(arr: Iterator[Double], k: Int): Seq[Double] = {
-      val topk = new Array[Double](k)
+    def findKMax(arr: Iterator[Float], k: Int): Seq[Float] = {
+      val topk = new Array[Float](k)
       for (i <- topk.indices) {
-        topk(i) = Double.MaxValue
+        topk(i) = Float.MaxValue
       }
       while (arr.hasNext) {
         val value = arr.next()
@@ -164,7 +164,7 @@ object ExpUtils {
     }
     println(sampleIndices)
 
-    val querySeqs = new ListBuffer[Seq[Double]]()
+    val querySeqs = new ListBuffer[Seq[Float]]()
     val data = readDataToSeq("E:\\yuzisheng\\data\\ts_185220_6060.txt")
     var i = 0
     while (data.hasNext && querySeqs.length != sampleNum) {
@@ -192,13 +192,13 @@ object ExpUtils {
   /**
    * 读取预计算的KNN结果
    */
-  def readKnnData(filePath: String): Seq[(Seq[Double], Seq[Int], Seq[Double])] = {
+  def readKnnData(filePath: String): Seq[(Seq[Float], Seq[Int], Seq[Float])] = {
     val source = Source.fromFile(filePath, "UTF-8")
     source.getLines().map(line => {
       val r = line.split("\t")
-      val seq = r.head.split(" ").map(_.toDouble).toSeq
+      val seq = r.head.split(" ").map(_.toFloat).toSeq
       val ks = r(1).split(" ").map(_.toInt).toSeq
-      val deltas = r.last.split(" ").map(_.toDouble).toSeq
+      val deltas = r.last.split(" ").map(_.toFloat).toSeq
       (seq, ks, deltas)
     }).toSeq
   }

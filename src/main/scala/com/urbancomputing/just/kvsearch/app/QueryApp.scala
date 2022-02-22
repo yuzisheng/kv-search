@@ -13,7 +13,7 @@ object QueryApp {
    * @return ([(id, distance)], query time, scan times 1)
    */
   def bruteForce(spark: SparkContext, path: String,
-                 qsWithIndex: Seq[(Int, Double)], k: Int): (Seq[(Int, Double)], Double, Int) = {
+                 qsWithIndex: Seq[(Int, Float)], k: Int): (Seq[(Int, Float)], Float, Int) = {
     val tic = System.currentTimeMillis()
     val data = spark.textFile(path)
     val (startTime, endTime) = (qsWithIndex.head._1, qsWithIndex.last._1)
@@ -24,10 +24,10 @@ object QueryApp {
         (id, seq.slice(startTime, endTime + 1))
       })
       .map(idAndSeq => (idAndSeq._1, chebyshevDistance(idAndSeq._2, qs)))
-      .takeOrdered(k)(Ordering[(Double, Int)].on(t => (t._2, t._1)))
+      .takeOrdered(k)(Ordering[(Float, Int)].on(t => (t._2, t._1)))
 
     val tok = System.currentTimeMillis()
-    (res, (tok - tic) / 1000.0, 1)
+    (res, (tok - tic) / 1000.0F, 1)
   }
 
   /**
@@ -35,9 +35,9 @@ object QueryApp {
    *
    * @return ([(id, distance)], query time, scan times)
    */
-  def kvSearch(hbaseTableName: String, qsWithIndex: Seq[(Int, Double)], k: Int, isBlockFilter: Boolean,
-               timeBlockLen: Int, valueBlockLen: Int, sampleBlockRdd: RDD[(Double, Double)],
-               sampleNum: Int, totalNum: Int): (Seq[(Int, Double)], Double, Int) = {
+  def kvSearch(hbaseTableName: String, qsWithIndex: Seq[(Int, Float)], k: Int, isBlockFilter: Boolean,
+               timeBlockLen: Int, valueBlockLen: Int, sampleBlockRdd: RDD[(Float, Float)],
+               sampleNum: Int, totalNum: Int): (Seq[(Int, Float)], Float, Int) = {
     val tic = System.currentTimeMillis()
     val tuple3 = genTuple3(qsWithIndex, timeBlockLen, valueBlockLen)
     val estimatedDelta = estimateDelta(sampleBlockRdd,
@@ -53,10 +53,10 @@ object QueryApp {
          |""".stripMargin)
 
     if (realDelta <= estimatedDelta) {
-      (res1, (System.currentTimeMillis() - tic) / 1000.0, 1)
+      (res1, (System.currentTimeMillis() - tic) / 1000.0F, 1)
     } else {
       val res2 = multiRowRangeQuery(hbaseTableName, tuple3, k, realDelta, isBlockFilter)
-      (res2, (System.currentTimeMillis() - tic) / 1000.0, 2)
+      (res2, (System.currentTimeMillis() - tic) / 1000.0F, 2)
     }
   }
 }

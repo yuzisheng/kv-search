@@ -11,7 +11,7 @@ object DataProcessApp {
   def checkData(rdd: RDD[String]): Unit = {
     val columnNum = rdd.first().split("\t").last.split(",").length
     val ts = rdd.map(line => {
-      val seq = line.split("\t").last.split(",").map(_.toDouble)
+      val seq = line.split("\t").last.split(",").map(_.toFloat)
       if (seq.length != columnNum) {
         throw new IllegalArgumentException(s"the dimension of each row are not all the same: " +
           s"$line -> [${seq.length} != $columnNum]")
@@ -37,11 +37,11 @@ object DataProcessApp {
    * @param valueBlockLen length of value block in time block
    */
   def convertToTimeBlockRdd(rdd: RDD[String], timeBlockLen: Int,
-                            valueBlockLen: Int): RDD[(Int, Double, Double, Int, Seq[(Double, Double)], Seq[Double])] = {
+                            valueBlockLen: Int): RDD[(Int, Float, Float, Int, Seq[(Float, Float)], Seq[Float])] = {
     rdd.flatMap(line => {
       val idAndSeq = line.split("\t", 2)
       val id = idAndSeq.head.toInt
-      val seq = idAndSeq.last.split(",").map(_.toDouble).toSeq
+      val seq = idAndSeq.last.split(",").map(_.toFloat).toSeq
       for (i <- seq.indices by timeBlockLen)
         yield {
           val timeBlockSeq = seq.slice(i, i + timeBlockLen)
@@ -64,7 +64,7 @@ object DataProcessApp {
    * @param missingValue missing value
    * @return (repairable, fixed sequence)
    */
-  def linearInterp(seq: Seq[Double], missingValue: Double = 0): (Boolean, Seq[Double]) = {
+  def linearInterp(seq: Seq[Float], missingValue: Float = 0F): (Boolean, Seq[Float]) = {
     val missingNum = seq.count(_ == missingValue)
     missingNum match {
       case 0 => (true, seq)
@@ -98,11 +98,11 @@ object DataProcessApp {
   /**
    * clean data
    */
-  def clean(rdd: RDD[String], missingValue: Double = 0): Unit = {
+  def clean(rdd: RDD[String], missingValue: Float = 0F): Unit = {
     val cleanRdd = rdd.map(line => {
       val idAndSeq = line.split("\t", 2)
       val id = idAndSeq.head.toInt
-      val seq = idAndSeq.last.split(",").map(_.toDouble).toSeq
+      val seq = idAndSeq.last.split(",").map(_.toFloat).toSeq
       val rs = linearInterp(seq, missingValue)
       (rs._1, id, rs._2)
     }).filter(_._1).map(t => t._2 + "\t" + t._3.mkString(","))
@@ -117,7 +117,7 @@ object DataProcessApp {
   def generateFakeTs(rdd: RDD[String], sizeMultiple: Int, dimMultiple: Int): RDD[String] = {
     rdd
       .flatMap(line => {
-        val seq = line.split("\t").last.split(",").map(_.toDouble).toSeq
+        val seq = line.split("\t").last.split(",").map(_.toFloat).toSeq
         val fakeSeqs = (1 to sizeMultiple).par.map(_ => genOneFakeSeq(seq, genGaussianZeroToOne()))
         fakeSeqs.toList :+ seq
       })

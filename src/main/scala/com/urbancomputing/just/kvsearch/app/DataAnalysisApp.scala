@@ -9,7 +9,7 @@ object DataAnalysisApp {
    */
   def statistics(data: RDD[String]): Unit = {
     // todo
-    val ts = data.map(_.split("\t").last.split(",").map(_.toDouble))
+    val ts = data.map(_.split("\t").last.split(",").map(_.toFloat))
     val tsMaxMin = ts.map(seq => (seq.max, seq.min))
     val tsAvg = ts.map(seq => seq.sum / seq.length)
     tsMaxMin.saveAsTextFile("./ts-max-min")
@@ -19,10 +19,10 @@ object DataAnalysisApp {
   /**
    * sample data to cal and save block
    */
-  def sampleBlock(data: RDD[String], fraction: Double = 0.01, deltaHdfsPath: String): Unit = {
+  def sampleBlock(data: RDD[String], fraction: Float = 0.01F, deltaHdfsPath: String): Unit = {
     data
       .sample(false, fraction)
-      .map(_.split("\t").last.split(",").map(_.toDouble))
+      .map(_.split("\t").last.split(",").map(_.toFloat))
       .map(seq => (seq.max, seq.min))
       .map(block => block._1 + " " + block._2)
       .saveAsTextFile(deltaHdfsPath)

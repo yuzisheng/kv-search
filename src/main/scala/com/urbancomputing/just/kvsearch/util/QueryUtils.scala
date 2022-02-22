@@ -24,8 +24,8 @@ object QueryUtils {
    * @param isBlockFilter  use block to filter or not
    * @return [(id, chebyshev)]
    */
-  def multiRowRangeQuery(hbaseTableName: String, tuple3: Seq[(Int, Seq[(Int, Double, Double)], Seq[(Int, Double)])],
-                         k: Int, delta: Double, isBlockFilter: Boolean = true): Seq[(Int, Double)] = {
+  def multiRowRangeQuery(hbaseTableName: String, tuple3: Seq[(Int, Seq[(Int, Float, Float)], Seq[(Int, Float)])],
+                         k: Int, delta: Float, isBlockFilter: Boolean = true): Seq[(Int, Float)] = {
     val connect = HBaseUtils.getConnection
     val hTable = connect.getTable(TableName.valueOf(hbaseTableName))
     val (family, qualifier1, qualifier2) =
@@ -46,7 +46,7 @@ object QueryUtils {
 
     val ranges = ListBuffer[MultiRowRangeFilter.RowRange]()
     for (timeBlockIndex <- tuple3.map(_._1)) {
-      val startRowKey = RowKeyUtils.timeMaxIndex(timeBlockIndex, max(globalMin - delta, 0.0))
+      val startRowKey = RowKeyUtils.timeMaxIndex(timeBlockIndex, max(globalMin - delta, 0.0F))
       val stopRowKey = RowKeyUtils.timeMaxIndex(timeBlockIndex, globalMax + delta)
       ranges += new MultiRowRangeFilter.RowRange(startRowKey, true, stopRowKey, true)
     }
@@ -66,19 +66,19 @@ object QueryUtils {
       if (isBlockFilter) {
         val queryBlock = qsMap(timeBlockIndex)._1.map(t => (t._2, t._3))
         val valueBlock = Bytes.toString(r.getValue(family, qualifier1))
-          .split(",").map(_.split(" ").map(_.toDouble)).map(t => (t.head, t.last))
+          .split(",").map(_.split(" ").map(_.toFloat)).map(t => (t.head, t.last))
         val targetBlock = qsMap(timeBlockIndex)._1.map(t => valueBlock(t._1))
         if (multiBlockDistance(targetBlock, queryBlock) > delta) {
           // if one block is false, this seq will be discarded
-          (false, id, timeBlockIndex, Double.NaN)
+          (false, id, timeBlockIndex, Float.NaN)
         } else {
-          val valueBlockSeq = Bytes.toString(r.getValue(family, qualifier2)).split(",").map(_.toDouble)
+          val valueBlockSeq = Bytes.toString(r.getValue(family, qualifier2)).split(",").map(_.toFloat)
           val querySeq = qsMap(timeBlockIndex)._2.map(_._2)
           val targetSeq = qsMap(timeBlockIndex)._2.map(t => valueBlockSeq(t._1))
           (true, id, timeBlockIndex, chebyshevDistance(targetSeq, querySeq))
         }
       } else {
-        val valueBlockSeq = Bytes.toString(r.getValue(family, qualifier2)).split(",").map(_.toDouble)
+        val valueBlockSeq = Bytes.toString(r.getValue(family, qualifier2)).split(",").map(_.toFloat)
         val querySeq = qsMap(timeBlockIndex)._2.map(_._2)
         val targetSeq = qsMap(timeBlockIndex)._2.map(t => valueBlockSeq(t._1))
         (true, id, timeBlockIndex, chebyshevDistance(targetSeq, querySeq))
@@ -94,79 +94,9 @@ object QueryUtils {
   }
 
   /**
-   * use par to implement multi row range query
-   */
-  def multiRowRangeQuery2(hbaseTableName: String, tuple3: Seq[(Int, Seq[(Int, Double, Double)], Seq[(Int, Double)])],
-                          k: Int, delta: Double, isBlockFilter: Boolean = true): Seq[(Int, Double)] = {
-    val connect = HBaseUtils.getConnection
-    val hTable = connect.getTable(TableName.valueOf(hbaseTableName))
-    val (family, qualifier1, qualifier2) =
-      (Bytes.toBytes("default"), Bytes.toBytes("t1"), Bytes.toBytes("t2"))
-
-    val queryTimeBlockLen = tuple3.length
-    val qs = tuple3.flatMap(_._3).map(_._2)
-    val (globalMax, globalMin) = (qs.max, qs.min)
-    println(
-      s"""
-         |+++++++
-         |row key range in max column:
-         |delta, qs max and min: [$delta, $globalMax, $globalMin];
-         |range key range:       [${globalMin - delta}, ${globalMax + delta}]
-         |query time block num:  [$queryTimeBlockLen]
-         |+++++++
-         |""".stripMargin)
-
-    val res = tuple3.par.flatMap(r => {
-      val timeBlockIndex = r._1
-      // val (blockSeqMax, blockSeqMin) = (r._3.maxBy(_._2)._2, r._3.minBy(_._2)._2)
-      // val startRowKey = RowKeyUtils.timeMaxIndex(timeBlockIndex, blockSeqMin - delta)
-      // val stopRowKey = RowKeyUtils.timeMaxIndex(timeBlockIndex, blockSeqMax + delta)
-      val startRowKey = RowKeyUtils.timeMaxIndex(timeBlockIndex, max(globalMin - delta, 0.0))
-      val stopRowKey = RowKeyUtils.timeMaxIndex(timeBlockIndex, globalMax + delta)
-      val scan = new Scan()
-        .withStartRow(startRowKey, true)
-        .withStopRow(stopRowKey, true)
-      hTable.getScanner(scan).asScala
-    })
-
-    // id-chebyshev distance
-    val qsMap = tuple3.map(r => r._1 -> (r._2, r._3)).toMap
-    val finalRes = res.par.map(r => {
-      val (timeBlockIndex, id) = parseRowKeyTimeAndId(r.getRow)
-      if (isBlockFilter) {
-        val queryBlock = qsMap(timeBlockIndex)._1.map(t => (t._2, t._3))
-        val valueBlock = Bytes.toString(r.getValue(family, qualifier1))
-          .split(",").map(_.split(" ").map(_.toDouble)).map(t => (t.head, t.last))
-        val targetBlock = qsMap(timeBlockIndex)._1.map(t => valueBlock(t._1))
-        if (multiBlockDistance(targetBlock, queryBlock) > delta) {
-          // if one block is false, this seq will be discarded
-          (false, id, timeBlockIndex, Double.NaN)
-        } else {
-          val valueBlockSeq = Bytes.toString(r.getValue(family, qualifier2)).split(",").map(_.toDouble)
-          val querySeq = qsMap(timeBlockIndex)._2.map(_._2)
-          val targetSeq = qsMap(timeBlockIndex)._2.map(t => valueBlockSeq(t._1))
-          (true, id, timeBlockIndex, chebyshevDistance(targetSeq, querySeq))
-        }
-      } else {
-        val valueBlockSeq = Bytes.toString(r.getValue(family, qualifier2)).split(",").map(_.toDouble)
-        val querySeq = qsMap(timeBlockIndex)._2.map(_._2)
-        val targetSeq = qsMap(timeBlockIndex)._2.map(t => valueBlockSeq(t._1))
-        (true, id, timeBlockIndex, chebyshevDistance(targetSeq, querySeq))
-      }
-    })
-      .groupBy(_._2)
-      .filter(t => t._2.length == queryTimeBlockLen && t._2.forall(_._1))
-      .mapValues(_.maxBy(_._4)._4).toList
-      .sortBy(t => (t._2, t._1)).take(k)
-
-    connect.close()
-    finalRes
-  }
-
-  /**
    * full scan in hbase
    */
-  def hbaseScanAll(hbaseTableName: String, querySeq: Seq[Double], k: Int): (Seq[(Int, Double)], Double, Int) = {
+  def hbaseScanAll(hbaseTableName: String, querySeq: Seq[Float], k: Int): (Seq[(Int, Float)], Float, Int) = {
     val tic = System.currentTimeMillis()
     val connect = HBaseUtils.getConnection
     val hTable = connect.getTable(TableName.valueOf(hbaseTableName))
@@ -176,20 +106,20 @@ object QueryUtils {
     val topKRes = hTable.getScanner(scan).asScala
       .map(r => {
         val idAndSeq = Bytes.toString(r.getValue(family, qualifier1)).split("#")
-        val (id, seq) = (idAndSeq.head.toInt, idAndSeq.last.split(",").map(_.toDouble))
+        val (id, seq) = (idAndSeq.head.toInt, idAndSeq.last.split(",").map(_.toFloat))
         (id, chebyshevDistance(querySeq, seq))
       }).toSeq
       .sortBy(_._2).take(k)
     val tok = System.currentTimeMillis()
-    (topKRes, (tok - tic) / 1000.0, 1)
+    (topKRes, (tok - tic) / 1000.0F, 1)
   }
 
   /**
    * estimate delta by sampling block data
    */
-  def estimateDelta(sampleBlockRdd: RDD[(Double, Double)], qsBlock: (Double, Double), k: Int,
-                    sampleNum: Int, totalNum: Int): Double = {
-    val sampleK = (k * (sampleNum.toDouble / totalNum)).toInt + 1
+  def estimateDelta(sampleBlockRdd: RDD[(Float, Float)], qsBlock: (Float, Float), k: Int,
+                    sampleNum: Int, totalNum: Int): Float = {
+    val sampleK = (k * (sampleNum.toFloat / totalNum)).toInt + 1
     val delta = sampleBlockRdd
       .map(b => max(abs(b._1 - qsBlock._2), abs(b._2 - qsBlock._1)))
       .takeOrdered(sampleK)
@@ -200,8 +130,8 @@ object QueryUtils {
   /**
    * spark use block filter or not
    */
-  def sparkBlockFilter(data: RDD[(Int, Double, Double, Seq[Double])], k: Int, delta: Double,
-                       qs: Seq[Double], isBlockFilter: Boolean): (Seq[(Int, Double)], Double) = {
+  def sparkBlockFilter(data: RDD[(Int, Float, Float, Seq[Float])], k: Int, delta: Float,
+                       qs: Seq[Float], isBlockFilter: Boolean): (Seq[(Int, Float)], Float) = {
     val tic = System.currentTimeMillis()
     val (qsMax, qsMin) = (qs.max, qs.min)
     val res =
@@ -209,20 +139,20 @@ object QueryUtils {
         data
           .map(r => {
             if (blockDistance((r._2, r._3), (qsMax, qsMin)) > delta) {
-              (false, -1, Double.NaN)
+              (false, -1, Float.NaN)
             } else {
               (true, r._1, chebyshevDistance(r._4, qs))
             }
           })
           .filter(_._1)
           .map(t => (t._2, t._3))
-          .takeOrdered(k)(Ordering[(Double, Int)].on(t => (t._2, t._1)))
+          .takeOrdered(k)(Ordering[(Float, Int)].on(t => (t._2, t._1)))
       } else {
         data
           .map(r => (r._1, chebyshevDistance(r._4, qs)))
-          .takeOrdered(k)(Ordering[(Double, Int)].on(t => (t._2, t._1)))
+          .takeOrdered(k)(Ordering[(Float, Int)].on(t => (t._2, t._1)))
       }
     val tok = System.currentTimeMillis()
-    (res, (tok - tic) / 1000.0)
+    (res, (tok - tic) / 1000.0F)
   }
 }
