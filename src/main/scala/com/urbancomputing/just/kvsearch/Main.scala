@@ -8,11 +8,24 @@ import com.urbancomputing.just.kvsearch.util.OtherUtils._
 import com.urbancomputing.just.kvsearch.util.QueryUtils.{estimateDelta, hbaseScanAll, sparkBlockFilter}
 import org.apache.spark.{SparkConf, SparkContext}
 
+import scala.io.Source
 import scala.math._
 
 object Main {
   private val conf = new SparkConf().setAppName("KV-SEARCH")
   private val spark = new SparkContext(conf)
+
+  private def readKnnSampleData(): Seq[(Seq[Float], Seq[Int], Seq[Float])] = {
+    val filePath = Main.getClass.getClassLoader.getResource("KNN_185220_6060_100.txt").getPath
+    val source = Source.fromFile(filePath, "UTF-8")
+    source.getLines().map(line => {
+      val r = line.split("\t")
+      val seq = r.head.split(" ").map(_.toFloat).toSeq
+      val ks = r(1).split(" ").map(_.toInt).toSeq
+      val deltas = r.last.split(" ").map(_.toFloat).toSeq
+      (seq, ks, deltas)
+    }).toSeq
+  }
 
   private def sample(hdfsPath: String, expTimes: Int): Seq[Seq[(Int, Float)]] = {
     val data = spark.textFile(hdfsPath)
@@ -21,6 +34,7 @@ object Main {
       .map(line => line.split("\t").last.split(",").map(_.toFloat).zipWithIndex.map(t => (t._2, t._1)).toSeq)
   }
 
+  // todo 直接将采样数据写死
   private def sampleDiffDim(hdfsPath: String, expTimes: Int,
                             dims: Seq[Int]): Seq[(Int, Seq[Seq[(Int, Float)]])] = {
     val data = spark.textFile(hdfsPath)
@@ -31,6 +45,9 @@ object Main {
       .map(dim => (dim, sampleQs.map(_.slice(0, dim)).toSeq))
   }
 
+  /**
+   * 生成假数据
+   */
   def fakeOp(dataPath: String, sizeMultiple: Int, dimMultiple: Int): Unit = {
     val tic = System.currentTimeMillis()
     val data = spark.textFile(dataPath)
@@ -66,6 +83,9 @@ object Main {
          |""".stripMargin)
   }
 
+  /**
+   * 键值存储时序数据
+   */
   def indexOp(hdfsPath: String, timeBlockLen: Int, valueBlockLen: Int): Unit = {
     val tic = System.currentTimeMillis()
     val data = spark.textFile(hdfsPath)
@@ -100,6 +120,9 @@ object Main {
          |+++++++""".stripMargin)
   }
 
+  /**
+   * 时序相似搜索
+   */
   def queryOp(method: String, qs: Seq[(Int, Float)], k: Int, otherParam: String): (Seq[(Int, Float)], Float, Int) = {
     method match {
       case "spark-scan" =>
@@ -170,6 +193,9 @@ object Main {
          |""".stripMargin)
   }
 
+  /**
+   * 不同查询近邻个数
+   */
   def diffKOp(hdfsPath: String, hbaseTableName: String,
               sampleNum: Int, expTimes: Int, ks: Seq[Int]): Unit = {
     val tic = System.currentTimeMillis()
@@ -284,6 +310,9 @@ object Main {
          |""".stripMargin)
   }
 
+  /**
+   * 不同查询时序维度
+   */
   def diffDimOp(hdfsPath: String, hbaseTableName: String,
                 k: Int, sampleNum: Int, expTimes: Int, dims: Seq[Int]): Unit = {
     val tic = System.currentTimeMillis()
@@ -329,6 +358,9 @@ object Main {
          |""".stripMargin)
   }
 
+  /**
+   * 不同时序存储时间周期
+   */
   def diffTpOp(hdfsPath: String, hbaseTableNamePrefix: String, sampleNum: Int, expTimes: Int, tps: Seq[Int]): Unit = {
     val tic = System.currentTimeMillis()
     val sampleQs = sample(hdfsPath, expTimes)
@@ -369,6 +401,9 @@ object Main {
          |""".stripMargin)
   }
 
+  /**
+   * 不同时序块存储时间周期
+   */
   def diffTp2Op(hdfsPath: String, hbaseTableNamePrefix: String, sampleNum: Int, expTimes: Int, tp2s: Seq[Int]): Unit = {
     val tic = System.currentTimeMillis()
     val sampleQs = sample(hdfsPath, expTimes)
@@ -409,6 +444,9 @@ object Main {
          |""".stripMargin)
   }
 
+  /**
+   * 不同采样率
+   */
   def diffSampleNum(hdfsPath: String, hbaseTableName: String,
                     k: Int, expTimes: Int, sampleNums: Seq[Int]): Unit = {
     val sampleQs = spark.textFile(hdfsPath)
